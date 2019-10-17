@@ -41,6 +41,8 @@ func TestAccBGPSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	defer deleteDevice(t, c, d.ID)
+
 	aTrue := true
 
 	bgpSession, _, err := c.BGPSessions.Create(d.ID,
@@ -100,6 +102,24 @@ func TestAccBGPSession(t *testing.T) {
 		t.Fatal("BGP Session not returned.")
 	}
 
+	bgpSession, _, err = c.BGPSessions.DisableDefaultRoute(sessionID)
+	if bgpSession == nil {
+		t.Fatal("Disabling default route failed")
+	}
+
+	if *bgpSession.DefaultRoute {
+		t.Fatal("Default route feature should have been disabled")
+	}
+
+	bgpSession, _, err = c.BGPSessions.EnableDefaultRoute(sessionID)
+	if bgpSession == nil {
+		t.Fatal("Enabling default route failed")
+	}
+
+	if !*bgpSession.DefaultRoute {
+		t.Fatal("Default route feature should have been re-enabled")
+	}
+
 	_, err = c.BGPSessions.Delete(sessionID)
 	if err != nil {
 		t.Fatal(err)
@@ -112,5 +132,4 @@ func TestAccBGPSession(t *testing.T) {
 		t.Fatal("Session not deleted")
 	}
 
-	c.Devices.Delete(d.ID)
 }

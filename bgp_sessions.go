@@ -9,6 +9,8 @@ type BGPSessionService interface {
 	Get(string, *GetOptions) (*BGPSession, *Response, error)
 	Create(string, CreateBGPSessionRequest) (*BGPSession, *Response, error)
 	Delete(string) (*Response, error)
+	EnableDefaultRoute(string) (*BGPSession, *Response, error)
+	DisableDefaultRoute(string) (*BGPSession, *Response, error)
 }
 
 type bgpSessionsRoot struct {
@@ -30,6 +32,10 @@ type BGPSession struct {
 	Device        Device   `json:"device,omitempty"`
 	Href          string   `json:"href,omitempty"`
 	DefaultRoute  *bool    `json:"default_route,omitempty"`
+}
+
+type DefaultRouteAction struct {
+	DefaultRoute bool `json:"default_route"`
 }
 
 // CreateBGPSessionRequest struct
@@ -69,4 +75,25 @@ func (s *BGPSessionServiceOp) Get(id string, getOpt *GetOptions) (session *BGPSe
 	}
 
 	return session, response, err
+}
+
+func (s *BGPSessionServiceOp) EnableDefaultRoute(id string) (*BGPSession, *Response, error) {
+	return s.Update(id, true)
+}
+
+func (s *BGPSessionServiceOp) DisableDefaultRoute(id string) (*BGPSession, *Response, error) {
+	return s.Update(id, false)
+}
+
+func (s *BGPSessionServiceOp) Update(id string, defaultRouteEnabled bool) (*BGPSession, *Response, error) {
+	path := fmt.Sprintf("%s/%s", bgpSessionBasePath, id)
+	session := new(BGPSession)
+	action := DefaultRouteAction{DefaultRoute: defaultRouteEnabled}
+
+	resp, err := s.client.DoRequest("PUT", path, action, session)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return session, resp, err
 }
